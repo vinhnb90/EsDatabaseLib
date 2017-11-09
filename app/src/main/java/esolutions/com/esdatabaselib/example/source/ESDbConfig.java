@@ -1,4 +1,4 @@
-package esolutions.com.esdatabaselib.example;
+package esolutions.com.esdatabaselib.example.source;
 
 
 import esolutions.com.esdatabaselib.anonation.DBConfig;

@@ -1,5 +1,6 @@
-package esolutions.com.esdatabaselib.example;
+package esolutions.com.esdatabaselib.example.source;
 
+import esolutions.com.esdatabaselib.anonation.AutoIncrement;
 import esolutions.com.esdatabaselib.anonation.Collumn;
 import esolutions.com.esdatabaselib.anonation.PrimaryKey;
 import esolutions.com.esdatabaselib.anonation.TYPE;
@@ -12,10 +13,11 @@ import esolutions.com.esdatabaselib.anonation.Table;
 @Table(name = "ClassRoom")
 public class ClassRoom {
     @PrimaryKey
-    @Collumn(name = "ClassRoomID", type = TYPE.INTEGER, other = "AUTOINCREMENT NOT NULL")
-    public int id;
+    @AutoIncrement
+    @Collumn(name = "ClassRoomID", type = TYPE.INTEGER, other = "NOT NULL")
+    private int id;
 
     @Collumn(name = "ClassRoomName", type = TYPE.TEXT, other = "NOT NULL")
-    public String name;
+    private String name;
 }
 

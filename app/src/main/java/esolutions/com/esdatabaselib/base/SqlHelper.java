@@ -1,4 +1,4 @@
-package esolutions.com.esdatabaselib;
+package esolutions.com.esdatabaselib.base;
 
 import android.Manifest;
 import android.content.Context;
@@ -16,6 +16,7 @@ import android.util.Log;
 import java.io.File;
 import java.lang.reflect.Field;
 
+import esolutions.com.esdatabaselib.anonation.AutoIncrement;
 import esolutions.com.esdatabaselib.anonation.Collumn;
 import esolutions.com.esdatabaselib.anonation.DBConfig;
 import esolutions.com.esdatabaselib.anonation.PrimaryKey;
@@ -65,12 +66,14 @@ public class SqlHelper extends SQLiteOpenHelper {
     @Override
     public void onCreate(SQLiteDatabase sqLiteDatabase) {
         for (Class<?> classz : sClassDBTable) {
-            sqLiteDatabase.execSQL(getQueryCreateTable(classz));
+            String create = getQueryCreateTable(classz);
+            sqLiteDatabase.execSQL(create);
         }
     }
 
     /**
      * get DB
+     *
      * @return
      * @throws Exception
      */
@@ -85,7 +88,7 @@ public class SqlHelper extends SQLiteOpenHelper {
      *
      * @param context
      * @param classDBConfig {@link DBConfig}
-     * @param classDBTable {@link Table}
+     * @param classDBTable  {@link Table}
      * @return
      * @throws Exception
      */
@@ -137,6 +140,7 @@ public class SqlHelper extends SQLiteOpenHelper {
         //create
         if (sIntance == null) {
             sIntance = new SqlHelper();
+            sIntance.getWritableDatabase();
         }
         return sIntance;
     }
@@ -175,14 +179,15 @@ public class SqlHelper extends SQLiteOpenHelper {
                 + annTable.name()
                 + "(");
 
-        Field[] fields = classz.getFields();
+        Field[] fields = classz.getDeclaredFields();
         for (int i = 0; i < fields.length; i++) {
-            boolean isPrimaryKey = fields[i].isAnnotationPresent(PrimaryKey.class);
             boolean isCollumn = fields[i].isAnnotationPresent(Collumn.class);
-            Collumn collumn = fields[i].getAnnotation(Collumn.class);
-
             if (!isCollumn)
                 break;
+
+            Collumn collumn = fields[i].getAnnotation(Collumn.class);
+            boolean isPrimaryKey = fields[i].isAnnotationPresent(PrimaryKey.class);
+            boolean isAutoIncrement = fields[i].isAnnotationPresent(AutoIncrement.class);
 
             if (i != 0 && i != fields.length - 1)
                 query.append(",");
@@ -192,6 +197,8 @@ public class SqlHelper extends SQLiteOpenHelper {
                     + " "
                     + collumn.type().getContentType()
                     + (isPrimaryKey ? " PRIMARY KEY" : "")
+                    + " "
+                    + (isAutoIncrement ? " AUTOINCREMENT" : "")
                     + " "
                     + collumn.other());
         }
@@ -282,6 +289,12 @@ public class SqlHelper extends SQLiteOpenHelper {
             sConfigData.getContext().sendBroadcast(new Intent(Intent.ACTION_MEDIA_MOUNTED, Uri
                     .parse("file://" + folderParent.getPath())));
         }
+    }
+
+    public static String getDatabasePath() throws Exception {
+        if (sConfigData == null)
+            throw new Exception("must be setup source data base!");
+        return Environment.getExternalStorageDirectory() + File.separator + sConfigData.getNameFolder() + File.separator + sConfigData.getNameDB() + ".s3db";
     }
 
     static class ObjectDbConfig {
