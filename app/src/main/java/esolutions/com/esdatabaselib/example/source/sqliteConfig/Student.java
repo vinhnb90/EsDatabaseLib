@@ -1,12 +1,12 @@
-package esolutions.com.esdatabaselib.example.source;
+package esolutions.com.esdatabaselib.example.source.sqliteConfig;
 
 
-import esolutions.com.esdatabaselib.anonation.AutoIncrement;
-import esolutions.com.esdatabaselib.anonation.Collumn;
-import esolutions.com.esdatabaselib.anonation.Params;
-import esolutions.com.esdatabaselib.anonation.PrimaryKey;
-import esolutions.com.esdatabaselib.anonation.TYPE;
-import esolutions.com.esdatabaselib.anonation.Table;
+import esolutions.com.esdatabaselib.baseSqlite.anonation.AutoIncrement;
+import esolutions.com.esdatabaselib.baseSqlite.anonation.Collumn;
+import esolutions.com.esdatabaselib.baseSqlite.anonation.Params;
+import esolutions.com.esdatabaselib.baseSqlite.anonation.PrimaryKey;
+import esolutions.com.esdatabaselib.baseSqlite.anonation.TYPE;
+import esolutions.com.esdatabaselib.baseSqlite.anonation.Table;
 
 /**
  * Created by VinhNB on 10/10/2017.

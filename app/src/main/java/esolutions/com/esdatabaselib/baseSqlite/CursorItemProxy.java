@@ -1,8 +1,7 @@
-package esolutions.com.esdatabaselib.base;
+package esolutions.com.esdatabaselib.baseSqlite;
 
 import android.database.Cursor;
 import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
 
 /**
  * Create proxy for cursor item

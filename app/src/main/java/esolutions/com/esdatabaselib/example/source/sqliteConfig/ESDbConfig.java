@@ -1,7 +1,7 @@
-package esolutions.com.esdatabaselib.example.source;
+package esolutions.com.esdatabaselib.example.source.sqliteConfig;
 
 
-import esolutions.com.esdatabaselib.anonation.DBConfig;
+import esolutions.com.esdatabaselib.baseSqlite.anonation.DBConfig;
 
 /**
  * Created by VinhNB on 10/10/2017.

@@ -18,12 +18,12 @@ import java.util.ArrayList;
 import java.util.List;
 
 import esolutions.com.esdatabaselib.R;
-import esolutions.com.esdatabaselib.base.LazyList;
-import esolutions.com.esdatabaselib.base.SqlDAO;
-import esolutions.com.esdatabaselib.base.SqlHelper;
-import esolutions.com.esdatabaselib.example.source.ClassRoom;
-import esolutions.com.esdatabaselib.example.source.ESDbConfig;
-import esolutions.com.esdatabaselib.example.source.Student;
+import esolutions.com.esdatabaselib.baseSqlite.LazyList;
+import esolutions.com.esdatabaselib.baseSqlite.SqlDAO;
+import esolutions.com.esdatabaselib.baseSqlite.SqlHelper;
+import esolutions.com.esdatabaselib.example.source.sqliteConfig.ClassRoom;
+import esolutions.com.esdatabaselib.example.source.sqliteConfig.ESDbConfig;
+import esolutions.com.esdatabaselib.example.source.sqliteConfig.Student;
 
 import static android.util.Log.d;
 

@@ -1,4 +1,4 @@
-package esolutions.com.esdatabaselib.base;
+package esolutions.com.esdatabaselib.baseSqlite;
 
 import android.Manifest;
 import android.content.Context;
@@ -16,15 +16,16 @@ import android.util.Log;
 import java.io.File;
 import java.lang.reflect.Field;
 
-import esolutions.com.esdatabaselib.anonation.AutoIncrement;
-import esolutions.com.esdatabaselib.anonation.Collumn;
-import esolutions.com.esdatabaselib.anonation.DBConfig;
-import esolutions.com.esdatabaselib.anonation.PrimaryKey;
-import esolutions.com.esdatabaselib.anonation.TYPE;
-import esolutions.com.esdatabaselib.anonation.Table;
+import esolutions.com.esdatabaselib.baseSqlite.anonation.AutoIncrement;
+import esolutions.com.esdatabaselib.baseSqlite.anonation.Collumn;
+import esolutions.com.esdatabaselib.baseSqlite.anonation.DBConfig;
+import esolutions.com.esdatabaselib.baseSqlite.anonation.PrimaryKey;
+import esolutions.com.esdatabaselib.baseSqlite.anonation.TYPE;
+import esolutions.com.esdatabaselib.baseSqlite.anonation.Table;
 
 import static android.support.v4.content.PermissionChecker.checkSelfPermission;
 import static android.util.Log.d;
+import static esolutions.com.esdatabaselib.utils.EsDatabaseLibCommon.hasPermissionWriteSdcard;
 
 
 /**
@@ -119,7 +120,7 @@ public class SqlHelper extends SQLiteOpenHelper {
             throw new RuntimeException("Has class not be format annotation Table!");
 
         //check permission db
-        if (!hasPermission(context))
+        if (!hasPermissionWriteSdcard(context))
             throw new SecurityException("Must be permission WRITE_EXTERNAL_STORAGE !");
 
         //setup
@@ -219,23 +220,6 @@ public class SqlHelper extends SQLiteOpenHelper {
                 + ";");
 
         return query.toString();
-    }
-
-    public static boolean hasPermission(Context context) {
-        boolean hasPermission = false;
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            if (checkSelfPermission(context.getApplicationContext(), Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
-                hasPermission = false;
-            } else {
-                hasPermission = true;
-            }
-        } else {
-            if (ContextCompat.checkSelfPermission(context, Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED)
-                hasPermission = false;
-            else
-                hasPermission = true;
-        }
-        return hasPermission;
     }
 
     /**

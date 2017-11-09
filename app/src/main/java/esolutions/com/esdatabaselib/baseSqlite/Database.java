@@ -1,10 +1,8 @@
-package esolutions.com.esdatabaselib.base;
+package esolutions.com.esdatabaselib.baseSqlite;
 
 import android.database.Cursor;
 import android.database.SQLException;
 import android.database.sqlite.SQLiteDatabase;
-
-import esolutions.com.esdatabaselib.base.DatabaseParams;
 
 @Deprecated
 public class Database {

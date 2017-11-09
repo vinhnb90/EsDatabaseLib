@@ -1,4 +1,4 @@
-package esolutions.com.esdatabaselib.base;
+package esolutions.com.esdatabaselib.baseSqlite;
 
 import android.content.ContentValues;
 import android.content.Context;
@@ -15,11 +15,11 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
-import esolutions.com.esdatabaselib.anonation.AutoIncrement;
-import esolutions.com.esdatabaselib.anonation.Collumn;
-import esolutions.com.esdatabaselib.anonation.Params;
-import esolutions.com.esdatabaselib.anonation.PrimaryKey;
-import esolutions.com.esdatabaselib.anonation.Table;
+import esolutions.com.esdatabaselib.baseSqlite.anonation.AutoIncrement;
+import esolutions.com.esdatabaselib.baseSqlite.anonation.Collumn;
+import esolutions.com.esdatabaselib.baseSqlite.anonation.Params;
+import esolutions.com.esdatabaselib.baseSqlite.anonation.PrimaryKey;
+import esolutions.com.esdatabaselib.baseSqlite.anonation.Table;
 
 public class SqlDAO {
 

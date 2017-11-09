@@ -1,15 +1,16 @@
-package esolutions.com.esdatabaselib.anonation;
+package esolutions.com.esdatabaselib.baseSharedPref.anonation;
 
 /**
  * Created by VinhNB on 10/10/2017.
  */
 
 public enum TYPE {
-    NULL("NULL"),
-    INTEGER("INTEGER"),
-    REAL("REAL"),
-    TEXT("TEXT"),
-    BLOB("BLOB")
+    STRING("STRING"),
+    STRING_SET("STRING_SET"),
+    INT("INT"),
+    LONG("LONG"),
+    FLOAT("FLOAT"),
+    BOOLEAN("BOOLEAN")
     ;
 
     private String contentType;

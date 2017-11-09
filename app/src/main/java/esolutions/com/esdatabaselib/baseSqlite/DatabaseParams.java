@@ -1,4 +1,4 @@
-package esolutions.com.esdatabaselib.base;
+package esolutions.com.esdatabaselib.baseSqlite;
 
 import android.content.ContentValues;
 

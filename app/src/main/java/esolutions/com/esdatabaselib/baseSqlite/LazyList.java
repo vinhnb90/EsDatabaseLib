@@ -1,8 +1,7 @@
-package esolutions.com.esdatabaselib.base;
+package esolutions.com.esdatabaselib.baseSqlite;
 
 import android.database.Cursor;
 
-import java.lang.annotation.Annotation;
 import java.util.ArrayList;
 
 public class LazyList<T> extends ArrayList<T> {
