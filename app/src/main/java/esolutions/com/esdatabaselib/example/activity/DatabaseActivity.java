@@ -27,7 +27,7 @@ import esolutions.com.esdatabaselib.example.source.sqliteConfig.Student;
 
 import static android.util.Log.d;
 
-public class MainActivity extends AppCompatActivity {
+public class DatabaseActivity extends AppCompatActivity {
 
     private static final String PATH_LOG = Environment.getExternalStorageDirectory() + File.separator + "ES_DB_TEST" + File.separator;
     public static final String NAME_FILE_LOG = "ES_Database_Test.s3db";
@@ -47,7 +47,7 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onClick(View view) {
                 if (threadCreateDB != null && threadCreateDB.isAlive()) {
-                    Toast.makeText(MainActivity.this, "Đang trong quá trình tạo db, thử lại sau!", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(DatabaseActivity.this, "Đang trong quá trình tạo db, thử lại sau!", Toast.LENGTH_SHORT).show();
                     return;
                 }
 
@@ -55,26 +55,26 @@ public class MainActivity extends AppCompatActivity {
                     @Override
                     public void run() {
                         try {
-                            SqlHelper.setupDB(MainActivity.this, ESDbConfig.class, new Class[]{
+                            SqlHelper.setupDB(DatabaseActivity.this, ESDbConfig.class, new Class[]{
                                     ClassRoom.class, Student.class});
                             //try reload because lib reload is not working
-                            MainActivity.this.createFileIfNotExist(PATH_LOG + NAME_FILE_LOG);
-                            MainActivity.this.runOnUiThread(new Runnable() {
+                            DatabaseActivity.this.createFileIfNotExist(PATH_LOG + NAME_FILE_LOG);
+                            DatabaseActivity.this.runOnUiThread(new Runnable() {
                                 @Override
                                 public void run() {
                                     try {
                                         (tvPath = (TextView) findViewById(R.id.tvPathFileDB)).setText(SqlHelper.getDatabasePath());
                                     } catch (Exception e) {
-                                        Toast.makeText(MainActivity.this, e.getMessage(), Toast.LENGTH_SHORT).show();
+                                        Toast.makeText(DatabaseActivity.this, e.getMessage(), Toast.LENGTH_SHORT).show();
                                         e.printStackTrace();
                                     }
                                 }
                             });
                         } catch (final Exception e) {
-                            MainActivity.this.runOnUiThread(new Runnable() {
+                            DatabaseActivity.this.runOnUiThread(new Runnable() {
                                 @Override
                                 public void run() {
-                                    Toast.makeText(MainActivity.this, e.getMessage(), Toast.LENGTH_SHORT).show();
+                                    Toast.makeText(DatabaseActivity.this, e.getMessage(), Toast.LENGTH_SHORT).show();
                                 }
                             });
 
@@ -90,7 +90,7 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onClick(View view) {
                 if (theadInsertData10k != null && theadInsertData10k.isAlive()) {
-                    Toast.makeText(MainActivity.this, "Đang trong quá trình insert dữ liệu, thử lại sau!", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(DatabaseActivity.this, "Đang trong quá trình insert dữ liệu, thử lại sau!", Toast.LENGTH_SHORT).show();
                     return;
                 }
 
@@ -98,7 +98,7 @@ public class MainActivity extends AppCompatActivity {
                     @Override
                     public void run() {
                         try {
-                            SqlDAO sqlDAO = new SqlDAO(SqlHelper.getIntance().openDB(), MainActivity.this);
+                            SqlDAO sqlDAO = new SqlDAO(SqlHelper.getIntance().openDB(), DatabaseActivity.this);
                             sqlDAO.deleteAll(Student.class);
 
                             //create list 10k student
@@ -113,22 +113,22 @@ public class MainActivity extends AppCompatActivity {
 
                             Long[] indexs = sqlDAO.insert(listDataDump);
 
-                            MainActivity.this.runOnUiThread(new Runnable() {
+                            DatabaseActivity.this.runOnUiThread(new Runnable() {
                                 @Override
                                 public void run() {
                                     try {
                                         fillListView();
                                     } catch (Exception e) {
-                                        Toast.makeText(MainActivity.this, e.getMessage(), Toast.LENGTH_SHORT).show();
+                                        Toast.makeText(DatabaseActivity.this, e.getMessage(), Toast.LENGTH_SHORT).show();
                                         e.printStackTrace();
                                     }
                                 }
                             });
                         } catch (final Exception e) {
-                            MainActivity.this.runOnUiThread(new Runnable() {
+                            DatabaseActivity.this.runOnUiThread(new Runnable() {
                                 @Override
                                 public void run() {
-                                    Toast.makeText(MainActivity.this, e.getMessage(), Toast.LENGTH_SHORT).show();
+                                    Toast.makeText(DatabaseActivity.this, e.getMessage(), Toast.LENGTH_SHORT).show();
                                 }
                             });
                             e.printStackTrace();
@@ -143,20 +143,20 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onClick(View view) {
                 if (threadReloadData != null && threadReloadData.isAlive()) {
-                    Toast.makeText(MainActivity.this, "Đang trong quá trình reload dữ liệu hiển thị, thử lại sau!", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(DatabaseActivity.this, "Đang trong quá trình reload dữ liệu hiển thị, thử lại sau!", Toast.LENGTH_SHORT).show();
                     return;
                 }
 
                 threadReloadData = new Thread(new Runnable() {
                     @Override
                     public void run() {
-                        MainActivity.this.runOnUiThread(new Runnable() {
+                        DatabaseActivity.this.runOnUiThread(new Runnable() {
                             @Override
                             public void run() {
                                 try {
                                     fillListView();
                                 } catch (Exception e) {
-                                    Toast.makeText(MainActivity.this, e.getMessage(), Toast.LENGTH_SHORT).show();
+                                    Toast.makeText(DatabaseActivity.this, e.getMessage(), Toast.LENGTH_SHORT).show();
                                     e.printStackTrace();
                                 }
                             }
@@ -170,7 +170,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void fillListView() throws Exception {
-        SqlDAO sqlDAO = new SqlDAO(SqlHelper.getIntance().openDB(), MainActivity.this);
+        SqlDAO sqlDAO = new SqlDAO(SqlHelper.getIntance().openDB(), DatabaseActivity.this);
         LazyList<Student> students = sqlDAO.selectAllLazy(Student.class, null);
 
         List<String> listData = new ArrayList<>();
@@ -183,7 +183,7 @@ public class MainActivity extends AppCompatActivity {
         }
 
         (lvData = (ListView) findViewById(R.id.lvdata)).
-                setAdapter(new ArrayAdapter<String>(MainActivity.this, android.R.layout.simple_list_item_1, listData));
+                setAdapter(new ArrayAdapter<String>(DatabaseActivity.this, android.R.layout.simple_list_item_1, listData));
 
     }
 

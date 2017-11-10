@@ -9,13 +9,15 @@
         android:label="@string/app_name"
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
-        <activity android:name=".example.activity.MainActivity">
+        <activity android:name=".example.activity.DatabaseActivity"></activity>
+        <activity android:name=".example.activity.BeginActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+        <activity android:name=".example.activity.SharePrefActivity"></activity>
     </application>
 
 </manifest>
