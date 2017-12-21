@@ -28,10 +28,6 @@ import esolutions.com.esdatabaselib.example.source.sqliteConfig.Student;
 import static android.util.Log.d;
 
 public class DatabaseActivity extends AppCompatActivity {
-
-    private static final String PATH_LOG = Environment.getExternalStorageDirectory() + File.separator + "ES_DB_TEST" + File.separator;
-    public static final String NAME_FILE_LOG = "ES_Database_Test.s3db";
-
     Button btnCreateTable, btnInsertData10k, btnReloadData;
     TextView tvPath;
     ListView lvData;
@@ -58,7 +54,6 @@ public class DatabaseActivity extends AppCompatActivity {
                             SqlHelper.setupDB(DatabaseActivity.this, ESDbConfig.class, new Class[]{
                                     ClassRoom.class, Student.class});
                             //try reload because lib reload is not working
-                            DatabaseActivity.this.createFileIfNotExist(PATH_LOG + NAME_FILE_LOG);
                             DatabaseActivity.this.runOnUiThread(new Runnable() {
                                 @Override
                                 public void run() {
@@ -111,7 +106,7 @@ public class DatabaseActivity extends AppCompatActivity {
                                 listDataDump.add(aStudent);
                             }
 
-                            Long[] indexs = sqlDAO.insert(listDataDump);
+                            Long[] indexs = sqlDAO.insert(Student.class, listDataDump);
 
                             DatabaseActivity.this.runOnUiThread(new Runnable() {
                                 @Override
@@ -185,43 +180,5 @@ public class DatabaseActivity extends AppCompatActivity {
         (lvData = (ListView) findViewById(R.id.lvdata)).
                 setAdapter(new ArrayAdapter<String>(DatabaseActivity.this, android.R.layout.simple_list_item_1, listData));
 
-    }
-
-    private boolean createFileIfNotExist(String sUriLogFile) throws Exception {
-        //create file
-        File file = new File(sUriLogFile);
-        if (!file.exists()) {
-            file.getParentFile().mkdirs();
-            file.createNewFile();
-            showFolderSdcard(sUriLogFile);
-            return false;
-        }
-
-        return true;
-    }
-
-    private void showFolderSdcard(String sUriLogFile) throws Exception {
-        // Load root folder
-        File forder = new File(sUriLogFile);
-        String parentPath = forder.getParentFile().getName();
-        File folderParent = new File(parentPath);
-
-        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.KITKAT) {
-            String[] allFilesRoot = forder.list();
-            for (int i = 0; i < allFilesRoot.length; i++) {
-                allFilesRoot[i] = folderParent + allFilesRoot[i];
-            }
-            if (allFilesRoot != null)
-                MediaScannerConnection.scanFile(this, allFilesRoot, null,
-                        new MediaScannerConnection.OnScanCompletedListener() {
-                            public void onScanCompleted(String path, Uri uri) {
-                                d("ExternalStorage", "Scanned " + path + ":");
-                                d("ExternalStorage", "uri=" + uri);
-                            }
-                        });
-        } else {
-            this.sendBroadcast(new Intent(Intent.ACTION_MEDIA_MOUNTED, Uri
-                    .parse("file://" + parentPath)));
-        }
     }
 }

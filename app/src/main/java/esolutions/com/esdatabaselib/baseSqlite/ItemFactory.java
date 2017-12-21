@@ -35,5 +35,5 @@ public abstract class ItemFactory<T> {
         return mItemClassType;
     }
 
-    abstract T create(Cursor cursor, int index);
+    protected abstract T create(Cursor cursor, int index);
 }

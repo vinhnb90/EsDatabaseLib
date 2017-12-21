@@ -8,7 +8,6 @@ import android.support.annotation.NonNull;
  * Created by VinhNB on 8/8/2017.
  */
 
-@Deprecated
 public abstract class CursorItemProxy {
     private Cursor mCursor;
     private int mIndex;

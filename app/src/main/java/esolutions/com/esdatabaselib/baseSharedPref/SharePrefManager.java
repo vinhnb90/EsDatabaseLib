@@ -2,6 +2,7 @@ package esolutions.com.esdatabaselib.baseSharedPref;
 
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.support.annotation.Nullable;
 import android.text.TextUtils;
 import android.util.Log;
 
@@ -386,7 +387,7 @@ public class SharePrefManager<T> {
         for (Field field : fields) {
             String fieldName = field.getName();
             if (fieldName.equals("$change") || fieldName.equals("serialVersionUID"))
-                break;
+                continue;
 
 
             // get name and type
@@ -426,10 +427,12 @@ public class SharePrefManager<T> {
             for (Constructor ctor : constructors) {
                 //get all annonation of method constructor
                 Annotation[][] annotationss = ctor.getParameterAnnotations();
+                int countAnnotation = 0;
                 for (Annotation[] annotation1 : annotationss) {
                     for (Annotation annotation : annotation1) {
                         if (annotation instanceof Params) {
                             annotations.add(annotation);
+                            countAnnotation++;
                         }
                     }
                 }
@@ -440,6 +443,8 @@ public class SharePrefManager<T> {
                 if (sizeParamsCtor == 0)
                     continue;
 
+                if(countAnnotation != sizeParamsCtor)
+                    continue;
 
                 //create array object
                 //if quantum annotations not same quantum contructor
@@ -504,7 +509,7 @@ public class SharePrefManager<T> {
             //check type share and type field
             Object value = field.get(data);
             if (checkIsTypeFieldSameTypeSharePref(field, typeKeySPref)) {
-                writeValue(sharedPreferences, field, nameKeySPref, value, typeKeySPref);
+                writeValue(sharedPreferences, nameKeySPref, value, typeKeySPref);
             }
         }
 
@@ -512,8 +517,10 @@ public class SharePrefManager<T> {
         return this;
     }
 
-    private void writeValue(SharedPreferences sharedPreferences, Field field, String nameKeySharedPref, Object value, TYPE typeKeySPref) {
+    private void writeValue(SharedPreferences sharedPreferences, String nameKeySharedPref, @Nullable Object value, TYPE typeKeySPref) {
         //check value
+        if (value == null)
+            return;
         if (typeKeySPref == TYPE.STRING) {
             sharedPreferences.edit().putString(nameKeySharedPref, value.toString()).commit();
         }

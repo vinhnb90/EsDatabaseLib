@@ -7,25 +7,29 @@ import android.database.SQLException;
 import android.database.sqlite.SQLiteDatabase;
 import android.support.annotation.Nullable;
 import android.util.Log;
+import android.widget.Toast;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Set;
 
 import esolutions.com.esdatabaselib.baseSqlite.anonation.AutoIncrement;
 import esolutions.com.esdatabaselib.baseSqlite.anonation.Collumn;
 import esolutions.com.esdatabaselib.baseSqlite.anonation.Params;
 import esolutions.com.esdatabaselib.baseSqlite.anonation.PrimaryKey;
+import esolutions.com.esdatabaselib.baseSqlite.anonation.TYPE;
 import esolutions.com.esdatabaselib.baseSqlite.anonation.Table;
 
 public class SqlDAO {
 
-    private static final String TAG = SqlDAO.class.getName();
-    private Database mDatabase;
-    private Context mContext;
+    protected static final String TAG = SqlDAO.class.getName();
+    protected Database mDatabase;
+    protected Context mContext;
 
     public SqlDAO(SQLiteDatabase database, Context context) {
         mDatabase = new Database(database);
@@ -38,7 +42,6 @@ public class SqlDAO {
      * select all by mode lazy,
      *
      * @param tClass: Class model with full anonations
-     * @param cursor: {@link Cursor} nullable, if null default select * from table
      * @param <T>:    Name Class model
      * @return
      */
@@ -55,14 +58,22 @@ public class SqlDAO {
             cursor = mDatabase.rawQuery(querySelectAll, null);
         }
 
+
         ItemFactory<T> item = new ItemFactory<T>(tClass) {
             @Override
-            T create(Cursor cursor, int index) {
+            protected T create(Cursor cursor, int index) {
                 T object = null;
 
                 HashMap<String, Object> data = new HashMap<>();
                 T classResult = null;
                 StringBuilder messsageThrow = new StringBuilder();
+
+                //check cursor
+                if (cursor.getCount() == 0) {
+                    Toast.makeText(mContext, "Không có dữ liệu trong cursor của table!", Toast.LENGTH_SHORT).show();
+                    return classResult;
+                }
+
                 try {
                     object = getItemClassType().newInstance();
                     cursor.moveToPosition(index);
@@ -80,20 +91,33 @@ public class SqlDAO {
                     for (Field field : fields) {
                         String fieldName = field.getName();
                         if (fieldName.equals("$change") || fieldName.equals("serialVersionUID"))
-                            break;
+                            continue;
 
                         //get name column by check annotation
                         boolean isCollumn = field.isAnnotationPresent(Collumn.class);
                         if (!isCollumn)
-                            break;
+                            continue;
                         Collumn collumn = field.getAnnotation(Collumn.class);
 
                         //set value reflection
                         field.setAccessible(true);
                         Object value = field.get(object);
-                        if (value == null) {
-                            int columnIndex = cursor.getColumnIndex(collumn.name());
-                            value = cursor.getString(columnIndex);
+                        int columnIndex = cursor.getColumnIndex(collumn.name());
+
+                        if (collumn.type() == TYPE.INTEGER)
+                            value = cursor.getInt(columnIndex);
+
+                        else {
+                            if (value == null) {
+                                if (collumn.type() == TYPE.TEXT)
+                                    value = cursor.getString(columnIndex);
+
+                                if (collumn.type() == TYPE.BLOB)
+                                    value = cursor.getString(columnIndex);
+
+                                if (collumn.type() == TYPE.REAL)
+                                    value = cursor.getString(columnIndex);
+                            }
                         }
 
                         data.put(fieldName, value);
@@ -166,6 +190,7 @@ public class SqlDAO {
                     if (classResult == null && messsageThrow.length() != 0) {
                         messsageThrow.append("\n").append("Class " + classz.getSimpleName() + " must be has constructor with full param and annotation!");
                         Log.e(TAG, messsageThrow.toString());
+                        Toast.makeText(mContext, messsageThrow.toString(), Toast.LENGTH_SHORT).show();
                     }
                 }
 
@@ -177,21 +202,20 @@ public class SqlDAO {
         return result;
     }
 
-    public Cursor getCursor(String query, String[] selectionArgs) throws Exception {
-        return mDatabase.rawQuery(query, selectionArgs);
+    public <T> LazyList<T> selectCustomLazy(Cursor cursor, ItemFactory<T> itemFactory) {
+        return new LazyList<>(cursor, itemFactory);
     }
-
     //endregion
 
     //region insert
-    public <T> Long[] insert(List<T> objects) {
+    public <T> Long[] insert(Class<T> tableClass, List<T> objects) {
         Long[] indexInserts = new Long[objects.size()];
 
         int count = 0;
         mDatabase.beginTransaction();
         for (T object : objects) {
             try {
-                indexInserts[count] = insert(object);
+                indexInserts[count] = insert(tableClass, object);
                 count++;
             } catch (Exception e) {
                 indexInserts[count] = 0l;
@@ -205,9 +229,9 @@ public class SqlDAO {
         return indexInserts;
     }
 
-    public <T> long insert(T object) throws Exception {
+    public <T> long insert(Class<T> tableClass, T object) throws Exception {
         //check annotation table class
-        Class<?> classz = object.getClass();
+        Class<?> classz = tableClass;
         boolean isTableSQL = classz.isAnnotationPresent(Table.class);
         if (!isTableSQL)
             throw new RuntimeException("Class not description is table!");
@@ -219,12 +243,12 @@ public class SqlDAO {
         for (Field field : fields) {
             String fieldName = field.getName();
             if (fieldName.equals("$change") || fieldName.equals("serialVersionUID"))
-                break;
+                continue;
 
             //check annotation collumn
             boolean isCollumn = field.isAnnotationPresent(Collumn.class);
             if (!isCollumn)
-                break;
+                continue;
             Collumn collumn = field.getAnnotation(Collumn.class);
             boolean isPrimaryKey = field.isAnnotationPresent(PrimaryKey.class);
             boolean isAutoIncrement = field.isAnnotationPresent(AutoIncrement.class);
@@ -256,6 +280,417 @@ public class SqlDAO {
         return mDatabase.delete(paramDelete);
     }
     //endregion
+
+    public <T> boolean isExistRows(Class<T> tClass, String[] nameCollumnCheck, String[] valuesCheck) throws Exception {
+        //check validate
+        if (nameCollumnCheck.length != valuesCheck.length)
+            throw new Exception("total collumn not same total value object!");
+
+
+        //check annotation table class
+        Class<?> classz = tClass;
+        boolean isTableSQL = classz.isAnnotationPresent(Table.class);
+        if (!isTableSQL)
+            throw new RuntimeException("Class not description is table!");
+        Table annTable = classz.getAnnotation(Table.class);
+
+
+        //lấy tất cả field ngoài $change and serialVersionUID
+        //kiểm tra collumn annotations và lấy dữ liệu tạo DatabaseParams.Select và chuỗi điều kiện whereClause và whereArgs
+        //nếu giá trị của trường dataCheck = null thì khi isExistRows sẽ bỏ qua trường đó
+        Field[] fields = classz.getDeclaredFields();
+        DatabaseParams.Select param = new DatabaseParams.Select();
+        StringBuilder whereClause = new StringBuilder();
+        HashMap<String, Collumn> listCollumn = new HashMap<>();
+        ArrayList<String> nameFieldHasAnnotationsCollumn = new ArrayList<>();
+        List<String> whereArgs = new ArrayList<>();
+
+
+        int index = 0;
+        for (Field field : fields) {
+            String fieldName = field.getName();
+            if (fieldName.equals("$change") || fieldName.equals("serialVersionUID"))
+                continue;
+
+
+            //check annotation collumn
+            boolean isCollumn = field.isAnnotationPresent(Collumn.class);
+            if (!isCollumn)
+                continue;
+            Collumn collumn = field.getAnnotation(Collumn.class);
+            boolean isPrimaryKey = field.isAnnotationPresent(PrimaryKey.class);
+            boolean isAutoIncrement = field.isAnnotationPresent(AutoIncrement.class);
+
+
+            //thêm vào Map cột và tên field cột đó
+            //tăng index để loại bỏ "and" nếu index > 0
+            listCollumn.put(fieldName, collumn);
+            nameFieldHasAnnotationsCollumn.add(fieldName);
+//            whereClause.append(collumn.name() + " = ? ").append(" and ");
+//            whereArgs.add(value.toString());
+            index++;
+        }
+
+
+        //tăng index để loại bỏ "and" nếu index > 0
+        if (index == 0)
+            throw new RuntimeException("Data isExistRows null all field!");
+
+
+        //khi có list collumn thì check name collumn trong String[] nameCollumn
+        ArrayList<String> nameCollumnListInput = new ArrayList<>(Arrays.asList(nameCollumnCheck));
+        ArrayList<String> valuesCheckListInput = new ArrayList<>(Arrays.asList(valuesCheck));
+
+
+        //nếu có field không trùng tên như trong nameFieldHasAnnotationsCollumn của table thì báo Exceptions
+        ArrayList<String> collumnSame = (ArrayList<String>) nameCollumnListInput.clone();
+        collumnSame.retainAll(nameFieldHasAnnotationsCollumn);
+        ArrayList<String> collumnNotSame = (ArrayList<String>) nameCollumnListInput.clone();
+        collumnNotSame.removeAll(collumnSame);
+
+
+        //check đầu vào
+        if (collumnNotSame.size() != 0) {
+            StringBuilder message = new StringBuilder("Vui lòng kiểm tra lại các trường input nameCollumn[] không trùng annonations ở bảng " + annTable.name() + " gồm ");
+            for (String s : collumnNotSame
+                    ) {
+                message.append(", " + s);
+            }
+            throw new Exception(message.toString());
+        }
+
+
+        //create param
+        for (int i = 0; i < nameCollumnCheck.length; i++) {
+            Collumn collumn = listCollumn.get(nameCollumnCheck[i]);
+            whereClause.append(collumn.name() + " = ? ").append(" and ");
+            whereArgs.add(valuesCheck[i]);
+        }
+
+
+        //tinh chỉnh câu query
+        whereClause.delete(whereClause.length() - (" and ").length(), whereClause.length());
+
+
+        //select database
+        param.table = annTable.name();
+        param.columns = nameCollumnCheck;
+        param.selection = whereClause.toString();
+        param.selectionArgs = whereArgs.toArray(new String[whereArgs.size()]);
+
+
+        //get Cursor and close db
+        Cursor cur = mDatabase.select(param);
+        boolean exist = (cur.getCount() > 0);
+        cur.close();
+
+
+        return exist;
+    }
+
+    public <T> long updateRows(Class<T> tClass, T dataOld, T dataNew) throws Exception {
+        //check validate
+        //check annotation table class
+        Class<?> classz = tClass;
+        boolean isTableSQL = classz.isAnnotationPresent(Table.class);
+        if (!isTableSQL)
+            throw new RuntimeException("Class not description is table!");
+        Table annTable = classz.getAnnotation(Table.class);
+
+
+        //lấy tất cả field ngoài $change and serialVersionUID
+        //kiểm tra collumn annotations và lấy dữ liệu tạo DatabaseParams.Select và chuỗi điều kiện whereClause và whereArgs
+        //nếu giá trị của trường dataCheck = null thì khi isExistRows sẽ bỏ qua trường đó
+        Field[] fields = classz.getDeclaredFields();
+        DatabaseParams.Update paramUpdate = new DatabaseParams.Update();
+        StringBuilder whereClause = new StringBuilder();
+        HashMap<String, Collumn> listCollumn = new HashMap<>();
+        HashMap<Field, Collumn> listCollumnPrimaryKey = new HashMap<>();
+        ArrayList<String> valuesCheck = new ArrayList<>();
+        ContentValues contentValues = new ContentValues();
+        int index = 0;
+        for (Field field : fields) {
+            String fieldName = field.getName();
+            if (fieldName.equals("$change") || fieldName.equals("serialVersionUID"))
+                continue;
+
+
+            //check annotation collumn
+            boolean isCollumn = field.isAnnotationPresent(Collumn.class);
+            if (!isCollumn)
+                continue;
+            Collumn collumn = field.getAnnotation(Collumn.class);
+            boolean isPrimaryKey = field.isAnnotationPresent(PrimaryKey.class);
+            boolean isAutoIncrement = field.isAnnotationPresent(AutoIncrement.class);
+
+            if (isPrimaryKey && isAutoIncrement) {
+                listCollumnPrimaryKey.put(field, collumn);
+                continue;
+            }
+            if (isPrimaryKey)
+                listCollumnPrimaryKey.put(field, collumn);
+
+
+            //thêm vào Map cột và tên field cột đó
+            //tăng index để loại bỏ "and" nếu index > 0
+            listCollumn.put(fieldName, collumn);
+
+            //set valueCheck
+            field.setAccessible(true);
+            contentValues.put(collumn.name(), (field.get(dataNew) == null) ? "" : field.get(dataNew).toString());
+            index++;
+        }
+
+
+        //tăng index để loại bỏ "and" nếu index > 0
+        if (listCollumnPrimaryKey.size() == 0)
+            throw new RuntimeException("class " + annTable.name() + " cần có ít nhất một khóa chính!");
+
+        if (listCollumn.size() == 0)
+            throw new RuntimeException("class " + annTable.name() + " cần có ít nhất một cột không phải khóa chính!");
+
+        //create param check
+        Set<Field> fieldSet = listCollumnPrimaryKey.keySet();
+        ArrayList<String> nameCollumnCheck = new ArrayList<>();
+//        ArrayList<String> valuesCheck = new ArrayList<>();
+
+        for (Field field : fieldSet) {
+            Collumn collumn = listCollumnPrimaryKey.get(field);
+            field.setAccessible(true);
+            valuesCheck.add((field.get(dataOld) == null) ? "" : field.get(dataOld).toString());
+            nameCollumnCheck.add(collumn.name());
+            whereClause.append(collumn.name() + " = ? ").append(" and ");
+        }
+
+
+        //tinh chỉnh câu query
+        whereClause.delete(whereClause.length() - (" and ").length(), whereClause.length());
+
+
+        long rowAffect;
+        //select database
+        paramUpdate.table = annTable.name();
+        paramUpdate.values = contentValues;
+        paramUpdate.whereClause = whereClause.toString();
+        paramUpdate.whereArgs = valuesCheck.toArray(new String[valuesCheck.size()]);
+
+
+        //get Cursor and close db
+        rowAffect = mDatabase.update(mDatabase.mDatabase, paramUpdate);
+        return rowAffect;
+    }
+
+    public <T> long updateORInsertRows(Class<T> tClass, T dataOld, T dataNew) throws Exception {
+        //check validate
+        //check annotation table class
+        Class<?> classz = tClass;
+        boolean isTableSQL = classz.isAnnotationPresent(Table.class);
+        if (!isTableSQL)
+            throw new RuntimeException("Class not description is table!");
+        Table annTable = classz.getAnnotation(Table.class);
+
+
+        //lấy tất cả field ngoài $change and serialVersionUID
+        //kiểm tra collumn annotations và lấy dữ liệu tạo DatabaseParams.Select và chuỗi điều kiện whereClause và whereArgs
+        //nếu giá trị của trường dataCheck = null thì khi isExistRows sẽ bỏ qua trường đó
+        Field[] fields = classz.getDeclaredFields();
+        DatabaseParams.Update paramUpdate = new DatabaseParams.Update();
+        DatabaseParams.Insert paramInsert = new DatabaseParams.Insert();
+        StringBuilder whereClause = new StringBuilder();
+        HashMap<String, Collumn> listCollumn = new HashMap<>();
+        HashMap<Field, Collumn> listCollumnPrimaryKey = new HashMap<>();
+
+        ArrayList<String> valuesCheck = new ArrayList<>();
+        ContentValues contentValues = new ContentValues();
+        int index = 0;
+        for (Field field : fields) {
+            String fieldName = field.getName();
+            if (fieldName.equals("$change") || fieldName.equals("serialVersionUID"))
+                continue;
+
+
+            //check annotation collumn
+            boolean isCollumn = field.isAnnotationPresent(Collumn.class);
+            if (!isCollumn)
+                continue;
+            Collumn collumn = field.getAnnotation(Collumn.class);
+            boolean isPrimaryKey = field.isAnnotationPresent(PrimaryKey.class);
+            boolean isAutoIncrement = field.isAnnotationPresent(AutoIncrement.class);
+
+
+            if (isPrimaryKey && isAutoIncrement) {
+                listCollumnPrimaryKey.put(field, collumn);
+                continue;
+            }
+            if (isPrimaryKey)
+                listCollumnPrimaryKey.put(field, collumn);
+
+
+            //thêm vào Map cột và tên field cột đó
+            //tăng index để loại bỏ "and" nếu index > 0
+            listCollumn.put(fieldName, collumn);
+
+            //set valueCheck
+            field.setAccessible(true);
+            contentValues.put(collumn.name(), (field.get(dataNew) == null) ? "" : field.get(dataNew).toString());
+            index++;
+        }
+
+
+        //tăng index để loại bỏ "and" nếu index > 0
+        if (listCollumnPrimaryKey.size() == 0)
+            throw new RuntimeException("class " + annTable.name() + " cần có ít nhất một khóa chính!");
+
+        if (listCollumn.size() == 0)
+            throw new RuntimeException("class " + annTable.name() + " cần có ít nhất một cột không phải khóa chính!");
+
+        //create param check
+        Set<Field> fieldSet = listCollumnPrimaryKey.keySet();
+        ArrayList<String> nameCollumnCheck = new ArrayList<>();
+//        ArrayList<String> valuesCheck = new ArrayList<>();
+
+        for (Field field : fieldSet) {
+            Collumn collumn = listCollumnPrimaryKey.get(field);
+            field.setAccessible(true);
+            if(dataOld != null){
+                valuesCheck.add((field.get(dataOld) == null) ? "" : field.get(dataOld).toString());
+            }
+            else {
+                valuesCheck.add("");
+            }
+            nameCollumnCheck.add(collumn.name());
+            whereClause.append(collumn.name() + " = ? ").append(" and ");
+        }
+
+
+        //tinh chỉnh câu query
+        whereClause.delete(whereClause.length() - (" and ").length(), whereClause.length());
+
+
+        long rowAffect;
+        boolean isHasRow = isExistRows(tClass, nameCollumnCheck.toArray(new String[nameCollumnCheck.size()]), valuesCheck.toArray(new String[valuesCheck.size()]));
+        if (isHasRow) {
+            //select database
+            paramUpdate.table = annTable.name();
+            paramUpdate.values = contentValues;
+            paramUpdate.whereClause = whereClause.toString();
+            paramUpdate.whereArgs = valuesCheck.toArray(new String[valuesCheck.size()]);
+
+
+            //get Cursor and close db
+            rowAffect = mDatabase.update(mDatabase.mDatabase, paramUpdate);
+        } else {
+            //select database
+            paramInsert.table = annTable.name();
+            paramInsert.nullColumnHack = null;
+            paramInsert.values = contentValues;
+
+
+            //get Cursor and close db
+            rowAffect = mDatabase.insert(paramInsert);
+        }
+        return rowAffect;
+    }
+
+    public <T> int deleteRows(Class<T> tClass, String[] nameCollumnCheck, String[] valuesCheck) throws Exception {
+        //check validate
+        if (nameCollumnCheck.length != valuesCheck.length)
+            throw new Exception("total collumn not same total value object!");
+
+
+        //check annotation table class
+        Class<?> classz = tClass;
+        boolean isTableSQL = classz.isAnnotationPresent(Table.class);
+        if (!isTableSQL)
+            throw new RuntimeException("Class not description is table!");
+        Table annTable = classz.getAnnotation(Table.class);
+
+
+        //lấy tất cả field ngoài $change and serialVersionUID
+        //kiểm tra collumn annotations và lấy dữ liệu tạo DatabaseParams.Select và chuỗi điều kiện whereClause và whereArgs
+        //nếu giá trị của trường dataCheck = null thì khi isExistRows sẽ bỏ qua trường đó
+        Field[] fields = classz.getDeclaredFields();
+        DatabaseParams.Delete param = new DatabaseParams.Delete();
+        StringBuilder whereClause = new StringBuilder();
+        HashMap<String, Collumn> listCollumn = new HashMap<>();
+        ArrayList<String> nameFieldHasAnnotationsCollumn = new ArrayList<>();
+        List<String> whereArgs = new ArrayList<>();
+
+
+        int index = 0;
+        for (Field field : fields) {
+            String fieldName = field.getName();
+            if (fieldName.equals("$change") || fieldName.equals("serialVersionUID"))
+                continue;
+
+
+            //check annotation collumn
+            boolean isCollumn = field.isAnnotationPresent(Collumn.class);
+            if (!isCollumn)
+                continue;
+            Collumn collumn = field.getAnnotation(Collumn.class);
+            boolean isPrimaryKey = field.isAnnotationPresent(PrimaryKey.class);
+            boolean isAutoIncrement = field.isAnnotationPresent(AutoIncrement.class);
+
+
+            //thêm vào Map cột và tên field cột đó
+            //tăng index để loại bỏ "and" nếu index > 0
+            listCollumn.put(fieldName, collumn);
+            nameFieldHasAnnotationsCollumn.add(fieldName);
+            index++;
+        }
+
+
+        //tăng index để loại bỏ "and" nếu index > 0
+        if (index == 0)
+            throw new RuntimeException("Data isExistRows null all field!");
+
+
+        //khi có list collumn thì check name collumn trong String[] nameCollumn
+        ArrayList<String> nameCollumnListInput = new ArrayList<>(Arrays.asList(nameCollumnCheck));
+        ArrayList<String> valuesCheckListInput = new ArrayList<>(Arrays.asList(valuesCheck));
+
+
+        //nếu có field không trùng tên như trong nameFieldHasAnnotationsCollumn của table thì báo Exceptions
+        ArrayList<String> collumnSame = (ArrayList<String>) nameCollumnListInput.clone();
+        collumnSame.retainAll(nameFieldHasAnnotationsCollumn);
+        ArrayList<String> collumnNotSame = (ArrayList<String>) nameCollumnListInput.clone();
+        collumnNotSame.removeAll(collumnSame);
+
+
+        //check đầu vào
+        if (collumnNotSame.size() != 0) {
+            StringBuilder message = new StringBuilder("Vui lòng kiểm tra lại các trường input nameCollumn[] không trùng annonations ở bảng " + annTable.name() + " gồm ");
+            for (String s : collumnNotSame
+                    ) {
+                message.append(", " + s);
+            }
+            throw new Exception(message.toString());
+        }
+
+
+        //create param
+        for (int i = 0; i < nameCollumnCheck.length; i++) {
+            Collumn collumn = listCollumn.get(nameCollumnCheck[i]);
+            whereClause.append(collumn.name() + " = ? ").append(" and ");
+            whereArgs.add(valuesCheck[i]);
+        }
+
+
+        //tinh chỉnh câu query
+        whereClause.delete(whereClause.length() - (" and ").length(), whereClause.length());
+
+
+        //select database
+        param.table = annTable.name();
+        param.whereClause = whereClause.toString();
+        param.whereArgs = valuesCheck;
+
+
+        //get Cursor and close db
+        int rowDelete = mDatabase.delete(param);
+        return rowDelete;
+    }
 
     public void closeCursor(Cursor cursor) {
         if (cursor != null) {

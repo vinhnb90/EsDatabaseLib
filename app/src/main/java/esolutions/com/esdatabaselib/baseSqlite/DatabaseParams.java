@@ -10,6 +10,9 @@ public class DatabaseParams {
         public String nullColumnHack;
         public ContentValues values;
 
+        public Insert() {
+        }
+
         public Insert(String table, String nullColumnHack, ContentValues values) {
             this.table = table;
             this.nullColumnHack = nullColumnHack;
@@ -22,6 +25,9 @@ public class DatabaseParams {
         public String table;
         public String whereClause;
         public String[] whereArgs;
+
+        public Delete() {
+        }
 
         public Delete(String table, String whereClause, String[] whereArgs) {
             this.table = table;
