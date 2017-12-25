@@ -7,6 +7,7 @@ import android.view.View;
 
 import esolutions.com.esdatabaselib.R;
 
+
 public class BeginActivity extends AppCompatActivity {
 
     @Override
