@@ -3,7 +3,9 @@
   <component name="ProjectModuleManager">
     <modules>
       <module fileurl="file://$PROJECT_DIR$/EsDatabaseLib.iml" filepath="$PROJECT_DIR$/EsDatabaseLib.iml" />
+      <module fileurl="file://C:\Users\VinhNB\Documents\GitHub\EsDatabaseLib\EsDatabaseLib.iml" filepath="C:\Users\VinhNB\Documents\GitHub\EsDatabaseLib\EsDatabaseLib.iml" />
       <module fileurl="file://$PROJECT_DIR$/app/app.iml" filepath="$PROJECT_DIR$/app/app.iml" />
+      <module fileurl="file://C:\Users\VinhNB\Documents\GitHub\EsDatabaseLib\app\app.iml" filepath="C:\Users\VinhNB\Documents\GitHub\EsDatabaseLib\app\app.iml" />
     </modules>
   </component>
 </project>
